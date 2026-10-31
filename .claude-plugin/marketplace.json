@@ -1,0 +1,5 @@
+{
+  "name": "spend-cache-marketplace",
+  "owner": { "name": "ssshek2-cell" },
+  "plugins": [{ "name": "spend-cache", "source": "./" }]
+}

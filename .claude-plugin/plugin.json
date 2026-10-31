@@ -1,0 +1,20 @@
+{
+  "name": "spend-cache",
+  "version": "0.1.0",
+  "description": "Band above the prompt: $ spent of budget, plus prompt-cache WARM/COLD status with next-message cost.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "budget": {
+      "type": "number",
+      "title": "Budget (USD)",
+      "description": "Total budget shown as 'of $X'",
+      "default": 100
+    },
+    "inputPricePerMTok": {
+      "type": "number",
+      "title": "Input $/MTok",
+      "description": "Base input price of your model; cache read = 0.1x, 1h cache write = 2x",
+      "default": 3
+    }
+  }
+}
