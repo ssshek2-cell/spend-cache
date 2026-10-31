@@ -11,7 +11,7 @@ Claude Code mod. Adds a band above the prompt:
 At the prompt of a terminal session:
 
 ```
-/plugin install spend-cache --marketplace <owner>/<repo>
+/plugin install spend-cache --marketplace ssshek2-cell/spend-cache
 ```
 
 Answer `y` to add the marketplace, then pick a scope. Set the budget and input price in the mod's config.
