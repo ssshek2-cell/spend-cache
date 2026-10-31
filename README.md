@@ -3,6 +3,7 @@
 Claude Code mod. Adds a band above the prompt:
 
 - `$X of $100.00 spent this month`
+- A red line with the estimated dollar cost of the current task (everything since your last prompt)
 - WARM (red, robot bobs): prompt cache is live; shows minutes left and the estimated cost of your next message.
 - COLD (blue, robot frozen): cache expired after an hour; next message re-sends the whole chat, price shown first.
 
@@ -24,4 +25,10 @@ Claude Code does not expose your month total, so the mod counts spend from this 
 /spend-set 12.34
 ```
 
-Costs shown for the next message are estimates from the input price setting.
+## Estimates
+
+All dollar figures for the next message and the current task are estimates, not billed cost. They use the "Input $/MTok" setting (default 3) with assumed multipliers: cache read 0.1x, 1-hour cache write 2x, output 5x. Check your own model's rates and adjust the setting.
+
+## License
+
+MIT, see `LICENSE`.
