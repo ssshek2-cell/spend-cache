@@ -11,6 +11,7 @@ const NOW = Date.UTC(2026, 9, 31, 12, 0, 0)
 async function draw($: any, on: any, costs: number[]) {
   let clock = NOW
   on('clock.now', () => ({ value: clock }))
+  on('command.register', () => ({ value: { command: 'spend-set' } }))
   on('clock.every', () => ({ value: {} }))
   const kv = new Map<string, unknown>()
   on('store.get', (_: any, e: any) => ({ value: kv.get(e.key) }))
@@ -47,5 +48,24 @@ test('WARM after a turn: minutes left, cheap next msg', async ($, on) => {
   const warm = await ui.find({ type: 'Text', text: /WARM/ })
   expect(warm?.text).toMatch(/42m left/)
   expect(warm?.text).toMatch(/~\$0\.06/)
+  await ui.unmount()
+})
+
+test('current task shows dollars', async ($, on) => {
+  on('prompt.submit', (_: any, e: any) => ({ text: e.text }))
+  on('turn.step', async function* () {
+    return {
+      turnId: 't', index: 0, answer: '', toolUses: [], stopReason: 'end_turn',
+      usage: { input_tokens: 1000, output_tokens: 2000, cache_read_input_tokens: 200_000, cache_creation_input_tokens: 10_000, model: 'm' },
+    }
+  })
+  await draw($, on, [0.5])
+  await $.prompt.submit({ text: 'hi' } as never)
+  const stream = $.turn.step({ turnId: 't', index: 0, model: 'm' } as never)
+  for await (const _ of stream as any) { /* drain */ }
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const row = await ui.find({ type: 'Text', text: /current task/ })
+  console.log('BAND TASK LINE:', row?.text)
+  expect(row?.text).toMatch(/current task: ~\$0\.\d+ · 1 steps/)
   await ui.unmount()
 })

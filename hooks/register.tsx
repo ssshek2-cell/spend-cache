@@ -6,6 +6,9 @@ const tick = atom({ plugin: 'spend-cache', key: 'tick' } as const, 0)
 // session cost already added to the month total (session-scoped, survives hot reload)
 const seen = atom({ plugin: 'spend-cache', key: 'seen' } as const, 0)
 
+// dollars used by the current task: every model request since the last prompt
+const task = atom({ plugin: 'spend-cache', key: 'task' } as const, { usd: 0, steps: 0 })
+
 type Month = { month: string; total: number }
 
 const TTL_MS = 60 * 60 * 1000
@@ -33,6 +36,27 @@ export const register: Register = (on, options) => {
     $.clock.every(1000, () => void update($, tick, n => n + 1))
 
     return next(e)
+  })
+
+  on('prompt.submit', async ($, e, next) => {
+    await update($, task, () => ({ usd: 0, steps: 0 }))
+
+    return next(e)
+  })
+
+  on('turn.step', async function* ($, e, next) {
+    const response = yield* next(e)
+    const u = response.usage
+
+    if (u) {
+      // per MTok: fresh input = price, cache read 0.1x, 1h cache write 2x, output 5x
+      const usd =
+        ((u.input_tokens + u.cache_read_input_tokens * 0.1 + u.cache_creation_input_tokens * 2 + u.output_tokens * 5) * price) /
+        1_000_000
+      await update($, task, t => ({ usd: t.usd + usd, steps: t.steps + 1 }))
+    }
+
+    return response
   })
 
   on('command.run', { command: 'spend-set' }, async ($, e) => {
@@ -92,11 +116,15 @@ export const register: Register = (on, options) => {
     const next$ = isWarm ? mtok * price * 0.1 : mtok * price * 2
     const minutes = Math.ceil(msLeft / 60000)
 
+    const used = await read($, task)
     const robot = isWarm ? (frame % 2 === 0 ? '\u{1F916}' : ' \u{1F916}') : '\u{1F916}'
     const { Box, Text } = $.ui.resolve(e)
 
     return (
       <Box flexDirection="column">
+        <Text color="red">
+          current task: ~{cents(used.usd)} · {used.steps} steps
+        </Text>
         <Box>
         <Text>
           {money(spent)} of {money(budget)} spent{resets ? ` (resets ${resets})` : ' this month'}{'  '}
