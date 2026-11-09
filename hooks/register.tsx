@@ -104,9 +104,15 @@ export const register: Register = (on, options) => {
     const counted = await read($, seen)
     const pending = cost >= counted ? cost - counted : cost
     const held = await loadMonth($, now)
-    // the gateway's own spend_limit window is the real figure; local sum is the fallback
+    // the account's extra-usage figure (what claude.ai shows) is the real figure; then the gateway's spend_limit window; local sum is the fallback
+    const extra = (usage as { extraUsage?: { spent?: string | number } }).extraUsage
+    const extraSpent = extra?.spent === undefined ? NaN : Number(extra.spent)
     const limit = usage.rateLimits.find(r => r.kind === 'spend_limit')
-    const spent = limit ? (limit.percentUsed / 100) * budget : held.total + pending
+    const spent = Number.isFinite(extraSpent)
+      ? extraSpent
+      : limit
+        ? (limit.percentUsed / 100) * budget
+        : held.total + pending
     const resets = limit?.resetsAt ? new Date(limit.resetsAt).toISOString().slice(0, 10) : ''
     const tokens = usage.context.tokens ?? 0
 
